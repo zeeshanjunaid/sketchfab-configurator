@@ -27,86 +27,100 @@
     type="text/javascript"
     src="https://static.sketchfab.com/api/sketchfab-viewer-1.3.2.js"
   ></script>
-  <script
-    type="text/javascript"
-    src="./SketchfabConfigurator-1.0.6.js"
-  ></script>
   <script type="text/javascript">
-    var config = {
-      model: "a86f7c2ecee8456e891ea222f04e3134",
-      params: {
-        camera: 0,
-        preload: 1,
-        ui_controls: 0,
-        ui_infos: 0,
-        ui_watermark: 0,
+    var iframe = document.getElementById("api-frame");
+    var uid = "a86f7c2ecee8456e891ea222f04e3134"; // Your model UID
+    var client = new Sketchfab("1.12.0", iframe);
+
+    client.init(uid, {
+      success: function onSuccess(api) {
+        api.start();
+        api.addEventListener("viewerready", function () {
+          console.log("Viewer is ready");
+
+          // Initialize configurator
+          var options = [
+            {
+              name: "Texture",
+              options: [
+                {
+                  name: "",
+                  url: "https://i.imgur.com/hVQYxfV.jpg",
+                  price: 600,
+                },
+                {
+                  name: "",
+                  url: "https://i.imgur.com/zIqQ1DD.jpg",
+                  price: 900,
+                },
+                {
+                  name: "",
+                  url: "https://i.imgur.com/dh0kjlT.jpg",
+                  price: 1200,
+                },
+              ],
+            },
+            {
+              name: "Roof",
+              options: [
+                {
+                  name: "FUSION ROOF",
+                  selector: '[instance="1100"]',
+                  price: 1200,
+                },
+                {
+                  name: "SHED MODERNA",
+                  selector: '[instance="983"]',
+                  price: 1800,
+                },
+                {
+                  name: "ROOF MODERNA",
+                  selector: '[instance="1056"]',
+                  price: 2200,
+                },
+              ],
+            },
+          ];
+
+          function getSelections() {
+            var selections = [];
+            // Extract selections and calculate prices
+            options.forEach(function (option) {
+              var selectedOption = option.options[option.default || 0]; // Default or first option
+              selections.push(selectedOption);
+            });
+            return selections;
+          }
+
+          function sendSelectionsToParent() {
+            var selections = getSelections();
+            window.parent.postMessage(
+              { type: "selectionsData", selections: selections },
+              "*",
+            );
+          }
+
+          // Add event listeners for dynamically created options
+          var optionsContainer = document.querySelector(".options");
+          options.forEach(function (option) {
+            var selectElement = document.createElement("select");
+            selectElement.name = option.name;
+            option.options.forEach(function (opt, index) {
+              var optionElement = document.createElement("option");
+              optionElement.value = index;
+              optionElement.textContent = opt.name;
+              selectElement.appendChild(optionElement);
+            });
+            selectElement.addEventListener("change", sendSelectionsToParent);
+            optionsContainer.appendChild(selectElement);
+          });
+
+          sendSelectionsToParent(); 
+        });
       },
-      config: [
-        {
-          name: "Texture",
-          material: "Metal_Corrugated_Shiny",
-          channels: ["AlbedoPBR"],
-          type: "texture",
-          options: [
-            {
-              name: "",
-              url: "https://i.imgur.com/hVQYxfV.jpg",
-              price: 600,
-            },
-            {
-              name: "",
-              url: "https://i.imgur.com/zIqQ1DD.jpg",
-              price: 900,
-            },
-            {
-              name: "",
-              url: "https://i.imgur.com/dh0kjlT.jpg",
-              price: 1200,
-            },
-          ],
-          default: 0,
-        },
-        {
-          name: "Select",
-          type: "select",
-          options: [
-            {
-              name: "FUSION ROOF",
-              selector: '[instance="1100"]',
-              price: 1200,
-            },
-            {
-              name: "SHED MODERNA",
-              selector: '[instance="983"]',
-              price: 1800,
-            },
-            {
-              name: "ROOF MODERNA",
-              selector: '[instance="1056"]',
-              price: 2200,
-            },
-          ],
-          default: 0,
-        },
-      ],
-    };
-
-    var iframeEl = document.getElementById("api-frame");
-    var optionsEl = document.querySelector(".options");
-    var configurator = new SketchfabConfigurator.Configurator(
-      iframeEl,
-      optionsEl,
-      config,
-    );
-
-    function sendSelectionsToParent() {
-      var selections = configurator.getSelections();
-      window.parent.postMessage(
-        { type: "selectionsData", selections: selections },
-        "*",
-      );
-    }
-
-    configurator.on("selectionChange", sendSelectionsToParent);
+      error: function onError() {
+        console.log("Viewer error");
+      },
+    });
   </script>
 </html>
