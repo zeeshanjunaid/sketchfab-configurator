@@ -127,3 +127,8 @@ iframe {
   font-weight: bold;
   margin-bottom: 10px;
 }
+
+.price {
+  font-weight: bold;
+  margin-top: 20px;
+}
